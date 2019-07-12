@@ -157,6 +157,12 @@ class AutoEncoder(BaseDetector):
 
         check_parameter(dropout_rate, 0, 1, param_name='alpha')
 
+    def custom_loss(self,y):
+        def loss(y_true,y_pred):
+            return abs(abs(y_true-y_pred)-y)
+        return loss
+
+
     def _build_model(self):
         model = Sequential()
         # Input layer
@@ -179,7 +185,7 @@ class AutoEncoder(BaseDetector):
                         activity_regularizer=l2(self.l2_regularizer)))
 
         # Compile model
-        model.compile(loss=self.loss, optimizer=self.optimizer)
+        model.compile(loss=self.custom_loss(y=y), optimizer=self.optimizer)
         print(model.summary())
         return model
 
@@ -224,10 +230,11 @@ class AutoEncoder(BaseDetector):
         self.compression_rate_ = self.n_features_ // self.encoding_dim_
 
         # Build AE model & fit with X
-        self.model_ = self._build_model()
-        self.history_ = self.model_.fit(X_norm, X_norm,
+        for i in X_norm.shape[0]:
+            self.model_ = self._build_model(y[i])
+            self.history_ = self.model_.fit(X_norm[i], X_norm[i],
                                         epochs=self.epochs,
-                                        batch_size=self.batch_size,
+                                        batch_size=1,
                                         shuffle=True,
                                         validation_split=self.validation_size,
                                         verbose=self.verbose).history
