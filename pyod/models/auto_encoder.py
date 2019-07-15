@@ -20,7 +20,8 @@ from ..utils.utility import check_parameter
 from ..utils.stat_models import pairwise_distances_no_broadcast
 
 from .base import BaseDetector
-
+from keras.models import load_model
+import pandas as pd
 
 # noinspection PyUnresolvedReferences,PyPep8Naming,PyTypeChecker
 class AutoEncoder(BaseDetector):
@@ -184,7 +185,7 @@ class AutoEncoder(BaseDetector):
         return model
 
     # noinspection PyUnresolvedReferences
-    def fit(self, X, y=None):
+    def fit(self, X, trainedModelFilePath, y=None):
         """Fit detector. y is optional for unsupervised methods.
 
         Parameters
@@ -224,7 +225,14 @@ class AutoEncoder(BaseDetector):
         self.compression_rate_ = self.n_features_ // self.encoding_dim_
 
         # Build AE model & fit with X
-        self.model_ = self._build_model()
+        self.model_ = self._build_model()        
+        if trainedModelFilePath!="":
+            self.model_=load_model(trainedModelFilePath+".h5")
+        """print("self.model_@@@@@@@@@@@@@@")
+        for layer in self.model_.layers:
+                weights = layer.get_weights()
+                print(weights)"""
+        print(self.model_)
         self.history_ = self.model_.fit(X_norm, X_norm,
                                         epochs=self.epochs,
                                         batch_size=self.batch_size,
